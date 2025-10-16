@@ -1,9 +1,11 @@
+from datetime import datetime
 from model_fc import Net
 import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 import parameters
 import numpy as np
+from tqdm import tqdm
 import random
 
 random.seed(parameters.RANDOM_SEED)
@@ -12,7 +14,7 @@ torch.manual_seed(parameters.RANDOM_SEED)
 
 
 BATCH_SIZE = 32
-EPOCHS = 100
+EPOCHS = 10
 LEARNING_RATE = 0.001
 VALIDATION_SIZE = .2
 
@@ -27,7 +29,7 @@ class BEDDataset(Dataset):
         return len(self.y)
 
     def __getitem__(self, index):
-        return self.X[index], self.y[index]
+        return self.X[index].flatten(), self.y[index].flatten()
 
 
 if __name__ == "__main__":
@@ -45,13 +47,58 @@ if __name__ == "__main__":
     validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    loss = torch.nn.MSELoss()
+    loss_fn = torch.nn.MSELoss()
+
+    best_val_loss = float("inf")
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     for epoch in range(EPOCHS):
+        best_loss = float("inf")
+        last_loss = 0
 
         net.train()
-        for X, y in training_loader:
+
+        running_loss = .0
+        print(f"Epoch: {epoch + 1}/{EPOCHS}")
+        for i, (X, y) in tqdm(enumerate(training_loader)):
+            
             optimizer.zero_grad()
-            outputs = net(X)
+            y_hat = net(X)
+            # print("Sizes:", y.shape, y_hat.shape)
+            loss = loss_fn(y_hat, y)
+            loss.backward()
+
+            optimizer.step()
+            batch_loss = loss.item()
+            running_loss += batch_loss
+            best_loss = min(batch_loss, best_loss)
+            
+        avg_loss = running_loss / (i + 1)
+
+        print(f"Training loss: best {best_loss} and avg {avg_loss}")
+
+        net.eval()
+
+        running_vloss = .0
+
+        with torch.no_grad():
+            for i, (X, y) in tqdm(enumerate(validation_loader)):
+                y_hat = net(X)
+                loss = loss_fn(y_hat, y)
+                running_vloss += loss
+        
+        avg_val_loss = running_vloss / (i + 1)
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            model_path = f"models/model_{timestamp}_{epoch}_BS{BATCH_SIZE}_EP{EPOCHS}_LR{LEARNING_RATE}_VS{VALIDATION_SIZE}_KNN{parameters.KNN}_NFB{parameters.N_FEATURES_BED}"
+            print(f"Saving as best model in {model_path}")
+            torch.save(net.state_dict(), model_path)
+
+        print('Avg valid loss: {}'.format(avg_val_loss))
+
+
+
+
+
 
 
