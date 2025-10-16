@@ -13,9 +13,9 @@ np.random.seed(parameters.RANDOM_SEED)
 torch.manual_seed(parameters.RANDOM_SEED)
 
 
-BATCH_SIZE = 32
+BATCH_SIZE = 2056
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/train_data.npz"
@@ -29,7 +29,7 @@ class BEDDataset(Dataset):
         return len(self.y)
 
     def __getitem__(self, index):
-        return self.X[index].flatten(), self.y[index].flatten()
+        return self.X[index], self.y[index]
 
 
 if __name__ == "__main__":
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
     validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
 
     best_val_loss = float("inf")
@@ -65,14 +65,17 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             y_hat = net(X)
             # print("Sizes:", y.shape, y_hat.shape)
-            loss = loss_fn(y_hat, y)
+            loss = loss_fn(y_hat.flatten(), y)
             loss.backward()
+            # print(y_hat)
 
             optimizer.step()
             batch_loss = loss.item()
             running_loss += batch_loss
             best_loss = min(batch_loss, best_loss)
-            
+        
+        
+
         avg_loss = running_loss / (i + 1)
 
         print(f"Training loss: best {best_loss} and avg {avg_loss}")
@@ -84,8 +87,9 @@ if __name__ == "__main__":
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(validation_loader)):
                 y_hat = net(X)
-                loss = loss_fn(y_hat, y)
-                running_vloss += loss
+                loss = loss_fn(y_hat.flatten(), y)
+
+                running_vloss += loss.item()
         
         avg_val_loss = running_vloss / (i + 1)
         if avg_val_loss < best_val_loss:
@@ -93,6 +97,11 @@ if __name__ == "__main__":
             model_path = f"models/model_{timestamp}_{epoch}_BS{BATCH_SIZE}_EP{EPOCHS}_LR{LEARNING_RATE}_VS{VALIDATION_SIZE}_KNN{parameters.KNN}_NFB{parameters.N_FEATURES_BED}"
             print(f"Saving as best model in {model_path}")
             torch.save(net.state_dict(), model_path)
+
+            # for name, param in net.named_parameters():
+            #     print(name, param)
+            
+            # exit()
 
         print('Avg valid loss: {}'.format(avg_val_loss))
 

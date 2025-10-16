@@ -7,7 +7,7 @@ FEATURES_BED = ["distance", "score"]
 N_FEATURES_BED = len(FEATURES_BED)
 N_FEATURES = KNN * N_FEATURES_BED * N_BEDS
 
-RANDOM_SEED = 42
+RANDOM_SEED = 5
 
 if __name__ == "__main__":
     print("KNN:", KNN)
