@@ -11,15 +11,17 @@ np.random.seed(parameters.RANDOM_SEED)
 torch.manual_seed(parameters.RANDOM_SEED)
 
 
+BATCH_SIZE = 32
 EPOCHS = 100
 LEARNING_RATE = 0.001
+VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/train_data.npz"
 
 class BEDDataset(Dataset):
     def __init__(self, X, y):
-        self.X = X
-        self.y = y
+        self.X = torch.from_numpy(X).float()
+        self.y = torch.from_numpy(y).float()
     
     def __len__(self):
         return len(self.y)
@@ -33,13 +35,14 @@ if __name__ == "__main__":
 
     training_data = np.load(TRAIN_DATA_PATH)
 
-    X = training_data["x"]
-    y = training_data["y"]  
+    X: np.ndarray = training_data["x"]
+    y: np.ndarray = training_data["y"]
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=parameters.RANDOM_SEED)
-    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=32, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=32, shuffle=False)
+    X = X.reshape(X.shape[0], -1)
 
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
+    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
+    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss = torch.nn.MSELoss()
@@ -47,8 +50,8 @@ if __name__ == "__main__":
     for epoch in range(EPOCHS):
 
         net.train()
-        for data, labels in training_loader:
+        for X, y in training_loader:
             optimizer.zero_grad()
-            outputs = net(data)
+            outputs = net(X)
 
 
