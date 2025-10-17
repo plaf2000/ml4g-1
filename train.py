@@ -48,9 +48,12 @@ if __name__ == "__main__":
     y = np.concatenate((y_X1, y_X2), axis=0)
 
 
+    print(np.mean(X[:, :, 0, 1], axis=0))
+
     X = X.reshape(X.shape[0], -1)
 
-    X = preprocessing.StandardScaler().fit_transform(X)
+    # X = preprocessing.StandardScaler().fit_transform(X)
+
 
 
     
