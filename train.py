@@ -14,8 +14,8 @@ torch.manual_seed(parameters.RANDOM_SEED)
 
 
 BATCH_SIZE = 2056
-EPOCHS = 10
-LEARNING_RATE = 0.0001
+EPOCHS = 1000
+LEARNING_RATE = 0.001
 VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/train_data.npz"
