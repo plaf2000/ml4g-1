@@ -1,6 +1,6 @@
 import os
 
-KNN = 50
+KNN = 5
 N_BEDS = len(os.listdir("Data/bed"))
 
 FEATURES_BED = ["distance", "score"]

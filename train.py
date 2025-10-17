@@ -3,6 +3,7 @@ from model_fc import Net
 import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 import parameters
 import numpy as np
 from tqdm import tqdm
@@ -18,7 +19,7 @@ EPOCHS = 1000
 LEARNING_RATE = 0.001
 VALIDATION_SIZE = .2
 
-TRAIN_DATA_PATH = "Data/train_data.npz"
+TRAIN_DATA_PATH = "Data/processed/data_train.npz"
 
 class BEDDataset(Dataset):
     def __init__(self, X, y):
@@ -36,15 +37,28 @@ if __name__ == "__main__":
     net = Net()
 
     training_data = np.load(TRAIN_DATA_PATH)
+    X1: np.ndarray = training_data["X1"]
+    X2: np.ndarray = training_data["X2"]
 
-    X: np.ndarray = training_data["x"]
-    y: np.ndarray = training_data["y"]
+    y_X1: np.ndarray = training_data["labels_X1"]
+    y_X2: np.ndarray = training_data["labels_X2"]
+
+
+    X = np.concatenate((X1, X2), axis=0)
+    y = np.concatenate((y_X1, y_X2), axis=0)
+
 
     X = X.reshape(X.shape[0], -1)
 
+    X = preprocessing.StandardScaler().fit_transform(X)
+
+
+    
+
+
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
-    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
+    training_loader = DataLoader(BEDDataset(X, y), batch_size=len(X), shuffle=True)
+    validation_loader = DataLoader(BEDDataset(X, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
