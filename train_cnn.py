@@ -1,5 +1,5 @@
 from datetime import datetime
-from model_fc import Net
+from model_cnn import GeneModel
 import torch
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
@@ -35,11 +35,11 @@ class BEDDataset(Dataset):
 
 
 if __name__ == "__main__":
-    net = Net()
+    net = GeneModel()
 
     training_data = np.load(TRAIN_DATA_PATH)
-    X1: np.ndarray = training_data["X1"]
-    X2: np.ndarray = training_data["X2"]
+    X1: np.ndarray = np.load("Data/processed/cnn_input_X1_train.npy")
+    X2: np.ndarray = np.load("Data/processed/cnn_input_X2_train.npy")
 
     y_X1: np.ndarray = training_data["labels_X1"]
     y_X2: np.ndarray = training_data["labels_X2"]
@@ -48,11 +48,8 @@ if __name__ == "__main__":
     X = np.concatenate((X1, X2), axis=0)
     y = np.concatenate((y_X1, y_X2), axis=0)
 
-    print(np.mean(X[:, :, 0, 1], axis=0))
-    print(np.isnan(X).any())
 
 
-    X = X.reshape(X.shape[0], -1)
 
     # X = preprocessing.StandardScaler().fit_transform(X)   
 
