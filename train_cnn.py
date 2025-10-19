@@ -17,7 +17,7 @@ torch.manual_seed(parameters.RANDOM_SEED)
 
 BATCH_SIZE = 2056
 EPOCHS = 1000
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.1
 VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/processed/data_train.npz"
@@ -48,18 +48,30 @@ if __name__ == "__main__":
     X = np.concatenate((X1, X2), axis=0)
     y = np.concatenate((y_X1, y_X2), axis=0)
 
-
-
-
     # X = preprocessing.StandardScaler().fit_transform(X)   
 
+    # Check for NaN or Inf values in data
+
+    # print("Broblemo", np.isnan(X).any(), np.where(np.isnan(X)))
+    # print(np.unique(np.where(np.isnan(X))[0], return_counts=True))
+    # plt.scatter(np.where(np.isnan(X))[0], np.where(np.isnan(X))[1])
+
+    # plt.show()
+
+    # exit()
+
+    missing_val = np.any(np.isnan(X) | np.isinf(X), axis=(1,2))
+    X = X[~missing_val, :, :]
+    y = y[~missing_val]
 
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
-    training_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X, y_val), batch_size=BATCH_SIZE, shuffle=False)
+
+    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
+    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    loss_fn = torch.nn.MSELoss()
+    # loss_fn = torch.nn.MSELoss()
+    loss_fn = torch.nn.PoissonNLLLoss()
 
     best_val_loss = float("inf")
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -77,7 +89,12 @@ if __name__ == "__main__":
             y_hat = net(X)
             # print("Sizes:", y.shape, y_hat.shape)
             loss = loss_fn(y_hat.flatten(), y)
+            
+            # Check for NaN in loss
+            
             loss.backward()
+            # Gradient clipping to prevent exploding gradients
+            torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
             # print(y_hat)
 
             optimizer.step()
@@ -96,7 +113,7 @@ if __name__ == "__main__":
         running_vloss = .0
 
         with torch.no_grad():
-            for i, (X, y) in tqdm(enumerate(validation_loader)):
+            for i, (X, y) in tqdm(enumerate(validation_loader), total=len(validation_loader)):
                 y_hat = net(X)
                 loss = loss_fn(y_hat.flatten(), y)
                 # print(y_hat.flatten().numpy())
