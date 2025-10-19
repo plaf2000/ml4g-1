@@ -17,7 +17,7 @@ torch.manual_seed(parameters.RANDOM_SEED)
 
 BATCH_SIZE = 2056
 EPOCHS = 1000
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.001
 VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/processed/data_train.npz"
@@ -38,40 +38,57 @@ if __name__ == "__main__":
     net = GeneModel()
 
     training_data = np.load(TRAIN_DATA_PATH)
-    X1: np.ndarray = np.load("Data/processed/cnn_input_X1_train.npy")
-    X2: np.ndarray = np.load("Data/processed/cnn_input_X2_train.npy")
+    X1_train: np.ndarray = np.load("Data/processed/cnn_input_X1_train.npy")
+    X2_train: np.ndarray = np.load("Data/processed/cnn_input_X2_train.npy")
 
-    y_X1: np.ndarray = training_data["labels_X1"]
-    y_X2: np.ndarray = training_data["labels_X2"]
+    y_X1_train:  np.ndarray = training_data["labels_X1"]
+    y_X2_train: np.ndarray = training_data["labels_X2"]
 
 
-    X = np.concatenate((X1, X2), axis=0)
-    y = np.concatenate((y_X1, y_X2), axis=0)
+    X_train = np.concatenate((X1_train, X2_train), axis=0)
+    y_train = np.concatenate((y_X1_train, y_X2_train), axis=0)
 
-    # X = preprocessing.StandardScaler().fit_transform(X)   
 
-    # Check for NaN or Inf values in data
+    missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
+    X_train = X_train[~missing_val, :, :]
+    y_train = y_train[~missing_val]
 
-    # print("Broblemo", np.isnan(X).any(), np.where(np.isnan(X)))
-    # print(np.unique(np.where(np.isnan(X))[0], return_counts=True))
-    # plt.scatter(np.where(np.isnan(X))[0], np.where(np.isnan(X))[1])
 
-    # plt.show()
+    X1_val: np.ndarray = np.load("Data/processed/cnn_input_X1_val.npy")
+    X2_val: np.ndarray = np.load("Data/processed/cnn_input_X2_val.npy")
 
-    # exit()
+    y_X1_val:  np.ndarray = np.load("Data/processed/X1_val_y.npy")
+    y_X2_val: np.ndarray = np.load("Data/processed/X2_val_y.npy")
 
-    missing_val = np.any(np.isnan(X) | np.isinf(X), axis=(1,2))
-    X = X[~missing_val, :, :]
-    y = y[~missing_val]
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
+    X_val = np.concatenate((X1_val, X2_val), axis=0)
+    y_val = np.concatenate((y_X1_val, y_X2_val), axis=0)
+
+
+    missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
+    X_train = X_train[~missing_val, :, :]
+    y_train = y_train[~missing_val]
+
+    missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
+    X_train = X_train[~missing_val, :, :]
+    y_train = y_train[~missing_val]
+
+    missing_val = np.any(np.isnan(X_val) | np.isinf(X_val), axis=(1,2))
+    X_val = X_val[~missing_val, :, :]
+    y_val = y_val[~missing_val]
+
+    # X = np.log(X + 1)
+
+
+
+    # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
 
     training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
     validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    # loss_fn = torch.nn.MSELoss()
-    loss_fn = torch.nn.PoissonNLLLoss()
+    loss_fn = torch.nn.MSELoss()
+    # loss_fn = torch.nn.PoissonNLLLoss()
 
     best_val_loss = float("inf")
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
