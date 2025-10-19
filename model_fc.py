@@ -9,12 +9,13 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
-            nn.BatchNorm1d(parameters.N_FEATURES),  # Batch normalization layer
-            nn.Linear(parameters.N_FEATURES, 256),  # First fully connected layer
-            nn.Dropout(0.2),        # Dropout layer with 20% dropout rate
-            nn.Linear(256, 128),       # Second fully connected layer
-            nn.Dropout(0.2),        # Dropout layer with 20% dropout rate
-            nn.Linear(128, 1)        # Output layer
+            # nn.BatchNorm1d(parameters.N_FEATURES),  # Batch normalization layer
+            nn.Linear(parameters.N_FEATURES, 1),  # First fully connected layer
+            nn.ReLU(),
+            # nn.Dropout(0.2),        # Dropout layer with 20% dropout rate
+            # nn.Linear(256, 128),       # Second fully connected layer
+            # nn.Dropout(0.2),        # Dropout layer with 20% dropout rate
+            # nn.Linear(128, 1)        # Output layer
         )
 
     def forward(self, x):

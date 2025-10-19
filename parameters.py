@@ -11,6 +11,18 @@ FEATURES_BED = ["signalValue",
 N_FEATURES_BED = len(FEATURES_BED)
 N_FEATURES = KNN * N_FEATURES_BED * N_BEDS
 
+SIGNALS_CNN = [
+    "DNase",
+    "H3K4me1",
+    "H3K4me3",
+    "H3K27ac",
+    "H3K36me3",
+]
+
+SIGNAL_CNN_WINDOW = 1e4
+CNN_BIN_SIZE = 100
+CNN_N_BINS = int(SIGNAL_CNN_WINDOW / CNN_BIN_SIZE)
+
 RANDOM_SEED = 42
 
 if __name__ == "__main__":
