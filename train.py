@@ -7,6 +7,7 @@ from sklearn import preprocessing
 import parameters
 import numpy as np
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 import random
 
 random.seed(parameters.RANDOM_SEED)
@@ -47,21 +48,16 @@ if __name__ == "__main__":
     X = np.concatenate((X1, X2), axis=0)
     y = np.concatenate((y_X1, y_X2), axis=0)
 
-
     print(np.mean(X[:, :, 0, 1], axis=0))
     print(X.shape, y.shape)
 
     X = X.reshape(X.shape[0], -1)
 
-    # X = preprocessing.StandardScaler().fit_transform(X)
-
-
-
-    
+    # X = preprocessing.StandardScaler().fit_transform(X)   
 
 
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
-    training_loader = DataLoader(BEDDataset(X, y), batch_size=len(X), shuffle=True)
+    training_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=True)
     validation_loader = DataLoader(BEDDataset(X, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE)
@@ -78,8 +74,7 @@ if __name__ == "__main__":
 
         running_loss = .0
         print(f"Epoch: {epoch + 1}/{EPOCHS}")
-        for i, (X, y) in tqdm(enumerate(training_loader)):
-            
+        for i, (X, y) in tqdm(enumerate(training_loader), total=len(training_loader)):            
             optimizer.zero_grad()
             y_hat = net(X)
             # print("Sizes:", y.shape, y_hat.shape)
@@ -106,7 +101,9 @@ if __name__ == "__main__":
             for i, (X, y) in tqdm(enumerate(validation_loader)):
                 y_hat = net(X)
                 loss = loss_fn(y_hat.flatten(), y)
-
+                plt.hist([y_hat.flatten().numpy(), y.flatten()] , bins=50, density=True, label=["Predicted", "True"], histtype="bar")
+                plt.legend()
+                plt.show()
                 running_vloss += loss.item()
         
         avg_val_loss = running_vloss / (i + 1)
