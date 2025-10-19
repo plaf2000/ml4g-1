@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
 
     print(np.mean(X[:, :, 0, 1], axis=0))
+    print(X.shape, y.shape)
 
     X = X.reshape(X.shape[0], -1)
 
