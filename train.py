@@ -23,25 +23,23 @@ VALIDATION_SIZE = .2
 TRAIN_DATA_PATH = "Data/processed/train_bed_data.npz"
 VAL_DATA_PATH = "Data/processed/val_bed_data.npz"
 
-def prepare_for_training(data):
+def prepare_for_training_X(data, scale=False):
     X1: np.ndarray = data["X1"]
     X2: np.ndarray = data["X2"]
 
-    y_X1: np.ndarray = data["labels_X1"]
-    y_X2: np.ndarray = data["labels_X2"]
 
 
     X = np.concatenate((X1, X2), axis=0)
-    y = np.log(np.concatenate((y_X1, y_X2), axis=0) + 1)
-
     X = X.reshape(X.shape[0], -1)
+        
 
-    X = preprocessing.StandardScaler().fit_transform(X)
+    return X
 
+def prepare_for_training_y(y_X1, y_X2):
+    y = np.concatenate((y_X1, y_X2), axis=0)
     y = np.log(y + 1)
 
-
-    return X, y
+    return y
 
 class BEDDataset(Dataset):
     def __init__(self, X, y):
@@ -59,10 +57,21 @@ if __name__ == "__main__":
     net = Net()
 
     training_data = np.load(TRAIN_DATA_PATH)
-    train_X, train_y = prepare_for_training(training_data)
+    train_X = prepare_for_training_X(training_data, scale=True)
+    scaler = preprocessing.StandardScaler().fit(train_X)
+    train_X = scaler.transform(train_X)
+
+    y_X1_train: np.ndarray = np.load("Data/processed/X1_train_y.npy")
+    y_X2_train: np.ndarray = np.load("Data/processed/X2_train_y.npy")
+    train_y = prepare_for_training_y(y_X1_train, y_X2_train)
 
     validation_data = np.load(VAL_DATA_PATH)
-    val_X, val_y = prepare_for_training(validation_data)
+    val_X = prepare_for_training_X(validation_data, scale=False)
+    val_X = scaler.transform(val_X)
+    y_X1_val: np.ndarray = np.load("Data/processed/X1_val_y.npy")
+    y_X2_val: np.ndarray = np.load("Data/processed/X2_val_y.npy")
+
+    val_y = prepare_for_training_y(y_X1_val, y_X2_val)
 
 
     training_loader = DataLoader(BEDDataset(train_X, train_y), batch_size=BATCH_SIZE, shuffle=True)
@@ -110,10 +119,7 @@ if __name__ == "__main__":
             for i, (X, y) in tqdm(enumerate(validation_loader)):
                 y_hat = net(X)
                 loss = loss_fn(y_hat.flatten(), y)
-                # print(y_hat.flatten().numpy())
-                # plt.hist([y_hat.flatten().numpy(), y.flatten()] , bins=50, density=True, label=["Predicted", "True"], histtype="bar")
-                # plt.legend()
-                # plt.show()
+
                 running_vloss += loss.item()
         
         avg_val_loss = running_vloss / (i + 1)
@@ -123,10 +129,7 @@ if __name__ == "__main__":
             print(f"Saving as best model in {model_path}")
             torch.save(net.state_dict(), model_path)
 
-            # for name, param in net.named_parameters():
-            #     print(name, param)
-            
-            # exit()
+           
 
         print('Avg valid loss: {}'.format(avg_val_loss))
 

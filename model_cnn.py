@@ -11,17 +11,13 @@ class GeneModel(nn.Module):
         self.net = nn.Sequential(
             nn.Conv1d(parameters.N_SIGNALS_CNN, 32, kernel_size=3, padding="same"),
             nn.ReLU(),
-            # nn.Dropout1d(0.2),
             nn.MaxPool1d(kernel_size=2),
-            nn.LazyConv1d(16, kernel_size=3, stride=4),
-            # nn.Dropout1d(0.2),
+            nn.LazyConv1d(16, kernel_size=3),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
             nn.LazyConv1d(1, kernel_size=3),
-            nn.Dropout(0.2),
             nn.ReLU(),
             nn.LazyLinear(1),
-            # nn.ReLU(),
         )
 
     def forward(self, x):
