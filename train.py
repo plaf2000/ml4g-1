@@ -20,7 +20,28 @@ EPOCHS = 1000
 LEARNING_RATE = 0.001
 VALIDATION_SIZE = .2
 
-TRAIN_DATA_PATH = "Data/processed/data_train.npz"
+TRAIN_DATA_PATH = "Data/processed/train_bed_data.npz"
+VAL_DATA_PATH = "Data/processed/val_bed_data.npz"
+
+def prepare_for_training(data):
+    X1: np.ndarray = data["X1"]
+    X2: np.ndarray = data["X2"]
+
+    y_X1: np.ndarray = data["labels_X1"]
+    y_X2: np.ndarray = data["labels_X2"]
+
+
+    X = np.concatenate((X1, X2), axis=0)
+    y = np.log(np.concatenate((y_X1, y_X2), axis=0) + 1)
+
+    X = X.reshape(X.shape[0], -1)
+
+    X = preprocessing.StandardScaler().fit_transform(X)
+
+    y = np.log(y + 1)
+
+
+    return X, y
 
 class BEDDataset(Dataset):
     def __init__(self, X, y):
@@ -38,46 +59,14 @@ if __name__ == "__main__":
     net = Net()
 
     training_data = np.load(TRAIN_DATA_PATH)
-    X1: np.ndarray = training_data["X1"]
-    X2: np.ndarray = training_data["X2"]
+    train_X, train_y = prepare_for_training(training_data)
 
-    y_X1: np.ndarray = training_data["labels_X1"]
-    y_X2: np.ndarray = training_data["labels_X2"]
-
-
-    X = np.concatenate((X1, X2), axis=0)
-    y = np.log(np.concatenate((y_X1, y_X2), axis=0) + 1)
+    validation_data = np.load(VAL_DATA_PATH)
+    val_X, val_y = prepare_for_training(validation_data)
 
 
-
-    print(np.mean(X[:, :, 0, 1], axis=0))
-    print(np.isnan(X).any())
-
-    print("X stats:" , np.min(X), np.max(X), np.mean(X), np.std(X))
-
-
-    X = X.reshape(X.shape[0], -1)
-
-    X = preprocessing.StandardScaler().fit_transform(X)
-
-
-
-    X1_val: np.ndarray = np.load("Data/processed/cnn_input_X1_val.npy")
-    X2_val: np.ndarray = np.load("Data/processed/cnn_input_X2_val.npy")
-
-    y_X1_val:  np.ndarray = np.load("Data/processed/X1_val_y.npy")
-    y_X2_val: np.ndarray = np.load("Data/processed/X2_val_y.npy")
-
-
-    X_val = np.concatenate((X1_val, X2_val), axis=0)
-    y_val = np.log(np.concatenate((y_X1_val, y_X2_val), axis=0) + 1)
-
-    # X = preprocessing.StandardScaler().fit_transform(X)   
-
-
-    # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
-    training_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=False)
+    training_loader = DataLoader(BEDDataset(train_X, train_y), batch_size=BATCH_SIZE, shuffle=True)
+    validation_loader = DataLoader(BEDDataset(val_X, val_y), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
