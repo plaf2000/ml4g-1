@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from model_cnn import GeneModel
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -18,7 +19,6 @@ torch.manual_seed(parameters.RANDOM_SEED)
 BATCH_SIZE = 2056
 EPOCHS = 1000
 LEARNING_RATE = 0.001
-VALIDATION_SIZE = .2
 
 TRAIN_DATA_PATH = "Data/processed/data_train.npz"
 
@@ -75,12 +75,6 @@ if __name__ == "__main__":
     X_val = X_val[~missing_val, :, :]
     y_val = y_val[~missing_val]
 
-    # X = np.log(X + 1)
-
-
-
-    # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
-
     training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
     validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
@@ -88,6 +82,7 @@ if __name__ == "__main__":
     loss_fn = torch.nn.MSELoss()
 
     best_val_loss = float("inf")
+    model_path = None
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     for epoch in range(EPOCHS):
@@ -101,15 +96,9 @@ if __name__ == "__main__":
         for i, (X, y) in tqdm(enumerate(training_loader), total=len(training_loader)):            
             optimizer.zero_grad()
             y_hat = net(X)
-            # print("Sizes:", y.shape, y_hat.shape)
             loss = loss_fn(y_hat.flatten(), y)
             
-            # Check for NaN in loss
-            
             loss.backward()
-            # Gradient clipping to prevent exploding gradients
-            torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
-            # print(y_hat)
 
             optimizer.step()
             batch_loss = loss.item()
@@ -130,25 +119,27 @@ if __name__ == "__main__":
             for i, (X, y) in tqdm(enumerate(validation_loader), total=len(validation_loader)):
                 y_hat = net(X)
                 loss = loss_fn(y_hat.flatten(), y)
-                # print(y_hat.flatten().numpy())
-                # plt.hist([y_hat.flatten().numpy(), y.flatten()] , bins=50, density=True, label=["Predicted", "True"], histtype="bar")
-                # plt.legend()
-                # plt.show()
                 running_vloss += loss.item()
         
         avg_val_loss = running_vloss / (i + 1)
+        print('Avg valid loss: {}'.format(avg_val_loss))
+
         if avg_val_loss < best_val_loss:
+            if model_path and os.path.exists(model_path):
+                os.remove(model_path)
+
+            model_path = "models/cnn_{}_VLOSS{:.4f}_BS{}_LR{}_BIN{}_W{}".format(timestamp, best_val_loss, BATCH_SIZE, LEARNING_RATE, int(parameters.CNN_BIN_SIZE), int(parameters.SIGNAL_CNN_WINDOW))
+
             best_val_loss = avg_val_loss
-            model_path = f"models/model_{timestamp}_BS{BATCH_SIZE}_LR{LEARNING_RATE}_VS{VALIDATION_SIZE}_BIN{parameters.CNN_BIN_SIZE}_W{parameters.SIGNAL_CNN_WINDOW}"
+                
             print(f"Saving as best model in {model_path}")
-            torch.save(net.state_dict(), model_path)
+            torch.save(net, model_path)
 
             # for name, param in net.named_parameters():
             #     print(name, param)
             
             # exit()
 
-        print('Avg valid loss: {}'.format(avg_val_loss))
 
 
 

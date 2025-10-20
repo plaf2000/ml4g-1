@@ -17,6 +17,7 @@ class GeneModel(nn.Module):
             nn.MaxPool1d(kernel_size=2),
             nn.LazyConv1d(1, kernel_size=3),
             nn.ReLU(),
+            nn.Dropout(0.2),
             nn.LazyLinear(1),
         )
 
