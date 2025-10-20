@@ -54,12 +54,23 @@ if __name__ == "__main__":
 
     X = X.reshape(X.shape[0], -1)
 
+
+    X1_val: np.ndarray = np.load("Data/processed/cnn_input_X1_val.npy")
+    X2_val: np.ndarray = np.load("Data/processed/cnn_input_X2_val.npy")
+
+    y_X1_val:  np.ndarray = np.load("Data/processed/X1_val_y.npy")
+    y_X2_val: np.ndarray = np.load("Data/processed/X2_val_y.npy")
+
+
+    X_val = np.concatenate((X1_val, X2_val), axis=0)
+    y_val = np.concatenate((y_X1_val, y_X2_val), axis=0)
+
     # X = preprocessing.StandardScaler().fit_transform(X)   
 
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
+    # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
     training_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X, y_val), batch_size=BATCH_SIZE, shuffle=False)
+    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()

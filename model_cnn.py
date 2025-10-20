@@ -18,6 +18,7 @@ class GeneModel(nn.Module):
             nn.LazyConv1d(1, kernel_size=3),
             nn.ReLU(),
             nn.LazyLinear(1),
+            # nn.ReLU(),
         )
 
     def forward(self, x):

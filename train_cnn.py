@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
 
     X_train = np.concatenate((X1_train, X2_train), axis=0)
-    y_train = np.concatenate((y_X1_train, y_X2_train), axis=0)
+    y_train = np.log(np.concatenate((y_X1_train, y_X2_train), axis=0) + 1)
 
 
     missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
@@ -62,16 +62,14 @@ if __name__ == "__main__":
 
 
     X_val = np.concatenate((X1_val, X2_val), axis=0)
-    y_val = np.concatenate((y_X1_val, y_X2_val), axis=0)
+    y_val = np.log(np.concatenate((y_X1_val, y_X2_val), axis=0) + 1)
 
 
     missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
     X_train = X_train[~missing_val, :, :]
     y_train = y_train[~missing_val]
 
-    missing_val = np.any(np.isnan(X_train) | np.isinf(X_train), axis=(1,2))
-    X_train = X_train[~missing_val, :, :]
-    y_train = y_train[~missing_val]
+
 
     missing_val = np.any(np.isnan(X_val) | np.isinf(X_val), axis=(1,2))
     X_val = X_val[~missing_val, :, :]
@@ -83,8 +81,8 @@ if __name__ == "__main__":
 
     # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
 
-    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
+    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=len(X_train), shuffle=True)
+    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=len(X_val), shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
@@ -142,7 +140,7 @@ if __name__ == "__main__":
         avg_val_loss = running_vloss / (i + 1)
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            model_path = f"models/model_{timestamp}_BS{BATCH_SIZE}_EP{EPOCHS}_LR{LEARNING_RATE}_VS{VALIDATION_SIZE}_KNN{parameters.KNN}_NFB{parameters.N_FEATURES_BED}"
+            model_path = f"models/model_{timestamp}_BS{BATCH_SIZE}_LR{LEARNING_RATE}_VS{VALIDATION_SIZE}_BIN{parameters.CNN_BIN_SIZE}_W{parameters.SIGNAL_CNN_WINDOW}"
             print(f"Saving as best model in {model_path}")
             torch.save(net.state_dict(), model_path)
 
