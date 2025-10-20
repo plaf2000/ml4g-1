@@ -86,7 +86,6 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
-    # loss_fn = torch.nn.PoissonNLLLoss()
 
     best_val_loss = float("inf")
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

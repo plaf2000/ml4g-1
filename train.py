@@ -46,13 +46,20 @@ if __name__ == "__main__":
 
 
     X = np.concatenate((X1, X2), axis=0)
-    y = np.concatenate((y_X1, y_X2), axis=0)
+    y = np.log(np.concatenate((y_X1, y_X2), axis=0) + 1)
+
+
 
     print(np.mean(X[:, :, 0, 1], axis=0))
     print(np.isnan(X).any())
 
+    print("X stats:" , np.min(X), np.max(X), np.mean(X), np.std(X))
+
 
     X = X.reshape(X.shape[0], -1)
+
+    X = preprocessing.StandardScaler().fit_transform(X)
+
 
 
     X1_val: np.ndarray = np.load("Data/processed/cnn_input_X1_val.npy")
@@ -63,14 +70,14 @@ if __name__ == "__main__":
 
 
     X_val = np.concatenate((X1_val, X2_val), axis=0)
-    y_val = np.concatenate((y_X1_val, y_X2_val), axis=0)
+    y_val = np.log(np.concatenate((y_X1_val, y_X2_val), axis=0) + 1)
 
     # X = preprocessing.StandardScaler().fit_transform(X)   
 
 
     # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
     training_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
+    validation_loader = DataLoader(BEDDataset(X, y), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
@@ -91,6 +98,7 @@ if __name__ == "__main__":
             y_hat = net(X)
             # print("Sizes:", y.shape, y_hat.shape)
             loss = loss_fn(y_hat.flatten(), y)
+            # print("Comparison:", y_hat.flatten().detach().numpy().mean(), y.numpy().mean())
             loss.backward()
             # print(y_hat)
 
