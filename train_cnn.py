@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
     # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=VALIDATION_SIZE, random_state=parameters.RANDOM_SEED)
 
-    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=len(X_train), shuffle=True)
-    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=len(X_val), shuffle=False)
+    training_loader = DataLoader(BEDDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
+    validation_loader = DataLoader(BEDDataset(X_val, y_val), batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
     loss_fn = torch.nn.MSELoss()
