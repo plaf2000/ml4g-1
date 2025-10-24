@@ -1,0 +1,2 @@
+This project depends on pyBigWig, a Python library for working with BigWig files.
+Installing pyBigWig on Windows can be challenging due to compilation requirements and missing dependencies. Pre-built binaries are not always available, and attempting to build from source may require additional tools like Microsoft Visual C++ Build Tools.
